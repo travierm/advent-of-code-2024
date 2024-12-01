@@ -6,9 +6,9 @@ use Monolog\Logger;
 
 class Benchmark
 {
-    private $startTimes = [];
-    private $endTimes = [];
-    private $memoryUsage = [];
+    private float $startTime;
+    private int $startMemory;
+    private ?string $currentStep = null;
 
     public function __construct(private Logger $log)
     {
@@ -16,45 +16,30 @@ class Benchmark
 
     public function start(string $label)
     {
-        $this->startTimes[$label] = microtime(true);
-        $this->memoryUsage[$label]['start'] = memory_get_usage();
+        $this->currentStep = $label;
+        $this->startTime = microtime(true);
+        $this->startMemory = memory_get_usage();
+
+        $this->log->info('starting step: ' . $label);
     }
 
-    public function end(string $label)
+    public function end()
     {
+        if (!$this->currentStep) {
+            return;
+        }
+
         $endTime = microtime(true);
-        $memoryUsed = memory_get_usage();
+        $endMemory = memory_get_usage();
 
-        $this->endTimes[$label] = $endTime;
-        $this->memoryUsage[$label]['end'] = $memoryUsed;
+        $timeElapsed = ($endTime - $this->startTime) * 1000; // Convert to milliseconds
+        $memoryDiff = $endMemory - $this->startMemory;
 
-        if ($this->log) {
-            $timeElapsed = ($endTime - $this->startTimes[$label]) * 1000; // Convert to milliseconds
-            $memoryDiff = $memoryUsed - $this->memoryUsage[$label]['start'];
+        $this->log->info("end of step benchmark", [
+            'time' => round($timeElapsed, 2) . ' ms',
+            'memory' => round($memoryDiff / 1024, 2) . ' KB'
+        ]);
 
-            $this->log->info("benchmark for " . $label, [
-                'time' => round($timeElapsed, 2) . ' ms',
-                'memory' => round($memoryDiff / 1024, 2) . ' KB'
-            ]);
-        }
-    }
-
-    public function getResults()
-    {
-        $results = [];
-
-        foreach ($this->startTimes as $label => $startTime) {
-            if (isset($this->endTimes[$label])) {
-                $timeElapsed = ($this->endTimes[$label] - $startTime) * 1000; // Convert to milliseconds
-                $memoryUsed = $this->memoryUsage[$label]['end'] - $this->memoryUsage[$label]['start'];
-
-                $results[$label] = [
-                    'time' => round($timeElapsed, 2) . ' ms',
-                    'memory' => round($memoryUsed / 1024, 2) . ' KB'
-                ];
-            }
-        }
-
-        return $results;
+        $this->currentStep = null;
     }
 }
