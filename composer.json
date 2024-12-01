@@ -1,0 +1,16 @@
+{
+    "name": "tmoorlag/advent-of-code-2024",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Tmoorlag\\AdventOfCode2024\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Travier Moorlag",
+            "email": "moorlagt@gmail.com"
+        }
+    ],
+    "require": {}
+}
