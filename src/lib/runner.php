@@ -14,6 +14,7 @@ if (!file_exists($mainFile)) {
     exit(0);
 }
 
+$log->info(sprintf('~~~ Day %s ~~~', $dayFolderInt));
 $log->info(sprintf('running file: %s', $mainFile));
 
 try {
@@ -22,5 +23,6 @@ try {
     $log->error($e->getMessage());
 }
 
+$log->info(sprintf('~~~ End Day %s ~~~', $dayFolderInt));
 
 exit(0);
