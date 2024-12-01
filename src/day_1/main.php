@@ -49,7 +49,8 @@ $bench->start('calculate distance between each pair', function () use ($state, $
 
     foreach ($state->leftList as $index => $leftInput) {
         $rightInput = $state->rightList[$index];
-        $distance =  $rightInput - $leftInput;
+        $distance =  abs($leftInput - $rightInput);
+
         $state->totalDistance += $distance;
     }
 
