@@ -2,7 +2,10 @@
 
 namespace App\Lib;
 
+use Closure;
 use Monolog\Logger;
+
+use function PHPUnit\Framework\callback;
 
 class Benchmark
 {
@@ -14,13 +17,17 @@ class Benchmark
     {
     }
 
-    public function start(string $label)
+    public function start(string $label, Closure $callback)
     {
         $this->currentStep = $label;
         $this->startTime = microtime(true);
         $this->startMemory = memory_get_usage();
 
         $this->log->info('starting step: ' . $label);
+
+        $callback();
+
+        $this->end();
     }
 
     public function end()

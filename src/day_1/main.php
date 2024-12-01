@@ -8,50 +8,51 @@ require_once 'vendor/autoload.php';
 $log = getLogger();
 $bench = new Benchmark($log);
 
-/**
- * Plan of attack
- * sort both lists
- * run through the pairs and add update the distance
-*/
+class ProblemState
+{
+    public string $inputFile = 'src/day_1/input.txt';
+    public array $leftList = [];
+    public array $rightList = [];
+    public int $totalDistance = 0;
+}
 
-$bench->start('parse input, build arrays and sort arrays.');
+$state = new ProblemState();
 
-$content = file_get_contents('src/day_1/input.txt');
-$rows = explode("\n", $content);
+$bench->start('parse input, build arrays and sort arrays.', function () use ($state) {
 
-$leftList = [];
-$rightList = [];
-foreach ($rows as $row) {
-    if ($row == "") {
-        continue;
+    $content = file_get_contents($state->inputFile);
+    $rows = explode("\n", $content);
+
+    foreach ($rows as $row) {
+        if ($row == "") {
+            continue;
+        }
+
+        $pair = explode("   ", $row);
+        $state->leftList[] = (int) $pair[0];
+        $state->rightList[] = (int) $pair[1];
     }
 
-    $pair = explode("   ", $row);
-    $leftList[] = (int) $pair[0];
-    $rightList[] = (int) $pair[1];
-}
+    sort($state->leftList);
+    sort($state->rightList);
+});
 
-sort($leftList);
-sort($rightList);
 
-$bench->end();
+$bench->start('calculate distance between each pair', function () use ($state, $log) {
+    if (count($state->leftList) !== count($state->rightList)) {
+        $log->error("the lists do not have equal lengths", [
+            'leftList' => count($state->leftList),
+            'rightList' => count($state->rightList)
+        ]);
+        exit(1);
+    }
 
-$bench->start("calculate distance between each pair");
-if (count($leftList) !== count($rightList)) {
-    $log->error("the lists do not have equal lengths", [
-        'leftList' => count($leftList),
-        'rightList' => count($rightList)
-    ]);
-    exit(1);
-}
+    foreach ($state->leftList as $index => $leftInput) {
+        $rightInput = $state->rightList[$index];
+        $distance =  $rightInput - $leftInput;
+        $state->totalDistance += $distance;
+    }
 
-$totalDistance = 0;
-foreach ($leftList as $index => $leftInput) {
-    $rightInput = $rightList[$index];
-    $distance =  $rightInput - $leftInput;
-    $totalDistance += $distance;
-}
+});
 
-$bench->end();
-
-$log->info('found total distance of ' . $totalDistance);
+$log->info('found total distance of ' . $state->totalDistance);
