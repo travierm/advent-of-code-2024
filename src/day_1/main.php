@@ -26,62 +26,45 @@ function assertStateAccurate(ProblemState $state)
 }
 
 $log = getLogger();
+
 $state = new ProblemState();
-$bench = new Benchmark($log);
 
-$bench->startBench('main loop');
-$bench->step('parse input, build & sort arrays', function () use ($state) {
+$content = file_get_contents($state->inputFile);
+$rows = explode("\n", $content);
 
-    $content = file_get_contents($state->inputFile);
-    $rows = explode("\n", $content);
-
-    foreach ($rows as $row) {
-        if ($row == "") {
-            continue;
-        }
-
-        $pair = explode("   ", $row);
-        $state->leftList[] = (int) $pair[0];
-        $state->rightList[] = (int) $pair[1];
+foreach ($rows as $row) {
+    if ($row == "") {
+        continue;
     }
 
-    sort($state->leftList);
-    sort($state->rightList);
-});
+    $pair = explode("   ", $row);
+    $state->leftList[] = (int) $pair[0];
+    $state->rightList[] = (int) $pair[1];
+}
+
+sort($state->leftList, SORT_NUMERIC);
+sort($state->rightList, SORT_NUMERIC);
 
 
-$bench->step('calculate distance between each pair', function () use ($state, $log) {
+foreach ($state->leftList as $index => $leftInput) {
+    $rightInput = $state->rightList[$index];
+    $distance = abs($leftInput - $rightInput);
 
-    if (count($state->leftList) !== count($state->rightList)) {
-        $log->error("the lists do not have equal lengths", [
-            'leftList' => count($state->leftList),
-            'rightList' => count($state->rightList)
-        ]);
-        exit(1);
-    }
-
-    foreach ($state->leftList as $index => $leftInput) {
-        $rightInput = $state->rightList[$index];
-        $distance = abs($leftInput - $rightInput);
-
-        $state->totalDistance += $distance;
-    }
-});
+    $state->totalDistance += $distance;
+}
 
 $log->info('found total distance of ' . $state->totalDistance);
 
-$bench->step('count left list frequencies', function () use ($state, $log) {
-    $frequencies = array_count_values($state->rightList);
+$frequencies = array_count_values($state->rightList);
 
-    foreach ($state->leftList as $num) {
-        if (isset($frequencies[$num])) {
-            $state->similarityScore += $num * $frequencies[$num];
-        }
+foreach ($state->leftList as $num) {
+    if (isset($frequencies[$num])) {
+        $state->similarityScore += $num * $frequencies[$num];
     }
-});
+}
+
 
 $log->info('found similarityScore of ' . $state->similarityScore);
 
-$bench->endBench();
 
 assertStateAccurate($state);

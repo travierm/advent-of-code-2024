@@ -17,11 +17,3 @@ function assertStateAccurate(ProblemState $state)
 }
 
 $log = getLogger();
-$state = new ProblemState();
-$bench = new Benchmark($log);
-
-$bench->startBench('main loop');
-$bench->step('first step', function () {
-
-});
-$bench->endBench();
