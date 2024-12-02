@@ -5,46 +5,81 @@ namespace App\Lib;
 use Closure;
 use Monolog\Logger;
 
-use function PHPUnit\Framework\callback;
-
 class Benchmark
 {
-    private float $startTime;
-    private int $startMemory;
+    private float $benchStart;    // Overall benchmark start time
+    private float $stepStart;     // Current step start time
     private ?string $currentStep = null;
+    private array $steps = [];
+    private ?string $currentBench = null;
 
     public function __construct(private Logger $log)
     {
     }
 
-    public function start(string $label, Closure $callback)
+    public function startBench(string $label)
+    {
+        $this->currentBench = $label;
+        $this->steps = [];
+        $this->benchStart = microtime(true);
+
+        //$this->log->info("recording benchmark: " . $label);
+    }
+
+    public function endBench()
+    {
+        if (!$this->currentBench) {
+            return;
+        }
+
+        $totalTime = (microtime(true) - $this->benchStart) * 1000;
+        $stepTimes = array_column($this->steps, 'time');
+
+        // Find slowest step
+        $slowestStep = $this->steps[0];
+        foreach ($this->steps as $step) {
+            if ($step['time'] > $slowestStep['time']) {
+                $slowestStep = $step;
+            }
+        }
+
+        $this->log->debug("benchmark complete: " . $this->currentBench, [
+            'total_time' => round($totalTime, 2) . ' ms',
+            'step_count' => count($this->steps),
+            'average_step_time' => round(array_sum($stepTimes) / max(count($stepTimes), 1), 2) . ' ms'
+        ]);
+
+        $this->log->warning("slowest step: " . $slowestStep['label'] . ' (' . round($slowestStep['time'], 2) . ' ms)');
+
+        $this->currentBench = null;
+        $this->steps = [];
+    }
+
+    public function step(string $label, Closure $callback)
     {
         $this->currentStep = $label;
-        $this->startTime = microtime(true);
-        $this->startMemory = memory_get_usage();
-
-        $this->log->info('starting step: ' . $label);
+        $this->stepStart = microtime(true);
 
         $callback();
 
-        $this->end();
+        $this->endStep();
     }
 
-    public function end()
+    private function endStep()
     {
         if (!$this->currentStep) {
             return;
         }
 
-        $endTime = microtime(true);
-        $endMemory = memory_get_usage();
+        $timeElapsed = (microtime(true) - $this->stepStart) * 1000;
 
-        $timeElapsed = ($endTime - $this->startTime) * 1000; // Convert to milliseconds
-        $memoryDiff = $endMemory - $this->startMemory;
+        $this->steps[] = [
+            'label' => $this->currentStep,
+            'time' => $timeElapsed
+        ];
 
-        $this->log->info("end of step benchmark", [
-            'time' => round($timeElapsed, 2) . ' ms',
-            'memory' => round($memoryDiff / 1024, 2) . ' KB'
+        $this->log->debug("step complete: " . $this->currentStep, [
+            'time' => round($timeElapsed, 2) . ' ms'
         ]);
 
         $this->currentStep = null;

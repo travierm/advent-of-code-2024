@@ -2,6 +2,8 @@
 
 use App\Lib\Benchmark;
 
+use function PHPUnit\Framework\assertEquals;
+
 require_once 'vendor/autoload.php';
 
 class ProblemState
@@ -17,11 +19,18 @@ class ProblemState
 
 }
 
+function assertStateAccurate(ProblemState $state)
+{
+    assertEquals($state->totalDistance, 2430334, 'total distance');
+    assertEquals($state->similarityScore, 28786472, 'similarity score');
+}
+
 $log = getLogger();
 $state = new ProblemState();
 $bench = new Benchmark($log);
 
-$bench->start('parse input, build & sort arrays', function () use ($state) {
+$bench->startBench('main loop');
+$bench->step('parse input, build & sort arrays', function () use ($state) {
 
     $content = file_get_contents($state->inputFile);
     $rows = explode("\n", $content);
@@ -41,7 +50,8 @@ $bench->start('parse input, build & sort arrays', function () use ($state) {
 });
 
 
-$bench->start('calculate distance between each pair', function () use ($state, $log) {
+$bench->step('calculate distance between each pair', function () use ($state, $log) {
+
     if (count($state->leftList) !== count($state->rightList)) {
         $log->error("the lists do not have equal lengths", [
             'leftList' => count($state->leftList),
@@ -60,12 +70,18 @@ $bench->start('calculate distance between each pair', function () use ($state, $
 
 $log->info('found total distance of ' . $state->totalDistance);
 
-$bench->start('check how many times numbers in the left list appear in the right list', function () use ($state, $log) {
-    foreach ($state->leftList as $num) {
-        $occurrences = count(array_filter($state->rightList, fn ($n) => $n === $num));
+$bench->step('count left list frequencies', function () use ($state, $log) {
+    $frequencies = array_count_values($state->rightList);
 
-        $state->similarityScore += $num * $occurrences;
+    foreach ($state->leftList as $num) {
+        if (isset($frequencies[$num])) {
+            $state->similarityScore += $num * $frequencies[$num];
+        }
     }
 });
 
 $log->info('found similarityScore of ' . $state->similarityScore);
+
+$bench->endBench();
+
+assertStateAccurate($state);
