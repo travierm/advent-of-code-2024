@@ -53,11 +53,8 @@ foreach ($state->unsafeReports as $report) {
     foreach ($variations as $variation) {
         if (reportIsSafe($variation, $log)) {
             $state->safeReportsWithDampener++;
-            //$log->info('found safe variation of report', $variation);
 
             continue 2;
-        } else {
-            //$log->debug('failed variation', $variation);
         }
     }
 }

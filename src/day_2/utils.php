@@ -18,12 +18,10 @@ function reportIsSafe(array $report, Logger $log)
         $nextLevel = $report[$index + 1];
 
         if (abs($level - $nextLevel) > 3) {
-            //$log->debug(sprintf('report failed at %s %s', $level, $nextLevel), $report);
             return false;
         }
 
         if ($level == $nextLevel) {
-            //$log->debug(sprintf('report failed at %s %s', $level, $nextLevel), $report);
             return false;
         }
     }
@@ -54,14 +52,6 @@ function reportIsSafe(array $report, Logger $log)
     }
 
     return true;
-}
-
-function arrayWithoutIndex(array $array, int $index)
-{
-    return array_merge(
-        array_slice($array, 0, $index),
-        array_slice($array, $index + 1)
-    );
 }
 
 function getReportVariations(array $report)

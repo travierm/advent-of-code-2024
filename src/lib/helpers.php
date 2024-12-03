@@ -14,3 +14,11 @@ function getLogger()
 
     return $logger;
 }
+
+function arrayWithoutIndex(array $array, int $index)
+{
+    return array_merge(
+        array_slice($array, 0, $index),
+        array_slice($array, $index + 1)
+    );
+}
