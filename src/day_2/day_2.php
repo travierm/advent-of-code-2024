@@ -14,18 +14,15 @@ class ProblemState
 
     /** @var []int */
     public array $reports = [];
+    public array $unsafeReports = [];
     public int $safeReports = 0;
     public int $safeReportsWithDampener = 0;
 }
 
 function assertStateAccurate(ProblemState $state)
 {
-    //assertEquals(213, $state->safeReports, 'safe report count is accurate');
-
-    //assertEquals(213, $state->safeReportsWithDampener, 'safe report count with dampener is accurate');
-
-    assertEquals(2, $state->safeReports, 'safe report count with dampener is accurate');
-    assertEquals(4, $state->safeReportsWithDampener, 'safe report count with dampener is accurate');
+    assertEquals(213, $state->safeReports, 'safe report count is accurate');
+    assertEquals(285, $state->safeReportsWithDampener, 'safe report count with dampener is accurate');
 }
 
 $log = getLogger();
@@ -40,14 +37,32 @@ while (!$file->eof()) {
     $file->next();
 }
 
-
 foreach ($state->reports as $report) {
     $isSafe = reportIsSafe($report, $log);
     if ($isSafe) {
         $state->safeReports++;
-        //$log->debug('found safe report', $report);
+    } else {
+        $state->unsafeReports[] = $report;
+    }
+}
+
+$state->safeReportsWithDampener += $state->safeReports;
+foreach ($state->unsafeReports as $report) {
+    $variations = getReportVariations($report);
+
+    foreach ($variations as $variation) {
+        if (reportIsSafe($variation, $log)) {
+            $state->safeReportsWithDampener++;
+            //$log->info('found safe variation of report', $variation);
+
+            continue 2;
+        } else {
+            //$log->debug('failed variation', $variation);
+        }
     }
 }
 
 $log->info('found ' . $state->safeReports . ' safe reports');
+$log->info('found ' . $state->safeReportsWithDampener . ' safe reports with dampener');
+
 assertStateAccurate($state);

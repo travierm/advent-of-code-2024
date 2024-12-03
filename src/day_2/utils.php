@@ -56,57 +56,20 @@ function reportIsSafe(array $report, Logger $log)
     return true;
 }
 
-
-/**
- * @param []int $report
- */
-function reportIsSafeWithDampener(array $report, Logger $log)
+function arrayWithoutIndex(array $array, int $index)
 {
-    $reportLength = count($report);
+    return array_merge(
+        array_slice($array, 0, $index),
+        array_slice($array, $index + 1)
+    );
+}
 
-    // find reports with levels that differ by 3 or equal to each other
+function getReportVariations(array $report)
+{
+    $variations = [];
     foreach ($report as $index => $level) {
-        if ($index === $reportLength - 1) {
-            continue;
-        }
-
-        $nextLevel = $report[$index + 1];
-
-        if (abs($level - $nextLevel) > 3) {
-            //$log->debug(sprintf('report failed at %s %s', $level, $nextLevel), $report);
-            return false;
-        }
-
-        if ($level == $nextLevel) {
-            //$log->debug(sprintf('report failed at %s %s', $level, $nextLevel), $report);
-            return false;
-        }
+        $variations[] = arrayWithoutIndex($report, $index);
     }
 
-    unset($level);
-    unset($index);
-
-    // find if a report is increasing or decreasing and if levels match that status
-    $isIncreasing = false;
-    foreach ($report as $index => $level) {
-        if ($index === $reportLength - 1) {
-            continue;
-        }
-
-        $nextLevel = $report[$index + 1];
-        if ($index === 0) {
-            $isIncreasing = $level < $nextLevel;
-            continue;
-        }
-
-        if ($isIncreasing && $level > $nextLevel) {
-            return false;
-        }
-
-        if (!$isIncreasing && $level < $nextLevel) {
-            return false;
-        }
-    }
-
-    return true;
+    return $variations;
 }
